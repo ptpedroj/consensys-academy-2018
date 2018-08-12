@@ -28,6 +28,12 @@ contract SimpleBank {
         owner = msg.sender;
     }
 
+    modifier userEnrolled() {
+        require(enrolled[msg.sender], "sender is not enrolled");
+        _;
+    }
+
+
     /// @notice Enroll a customer with the bank
     /// @return The users enrolled status
     // Log the appropriate event
@@ -40,10 +46,9 @@ contract SimpleBank {
     /// @notice Deposit ether into bank
     /// @return The balance of the user after the deposit is made
     // Add the appropriate keyword so that this function can receive ether
-    function deposit() public payable returns (uint) {
+    function deposit() public payable userEnrolled returns (uint) {
         /* Add the amount to the user's balance, call the event associated with a deposit,
           then return the balance of the user */
-        require(enrolled[msg.sender], "sender is not enrolled");
         balances[msg.sender] = balances[msg.sender] + msg.value;
         emit LogDepositMade(msg.sender, balances[msg.sender]);
         return balances[msg.sender];
@@ -53,12 +58,11 @@ contract SimpleBank {
     /// @dev This does not return any excess ether sent to it
     /// @param withdrawAmount amount you want to withdraw
     /// @return The balance remaining for the user
-    function withdraw(uint withdrawAmount) public returns (uint) {
+    function withdraw(uint withdrawAmount) public userEnrolled returns (uint) {
         /* If the sender's balance is at least the amount they want to withdraw,
            Subtract the amount from the sender's balance, and try to send that amount of ether
            to the user attempting to withdraw. IF the send fails, add the amount back to the user's balance
            return the user's balance.*/
-        require(enrolled[msg.sender], "sender is not enrolled");
         require(balances[msg.sender] >= withdrawAmount, "sender does not have enough funds to withdraw");
         balances[msg.sender] = balances[msg.sender] - withdrawAmount;
         msg.sender.transfer(withdrawAmount); // should revert changes if it fails
@@ -70,8 +74,7 @@ contract SimpleBank {
     /// @return The balance of the user
     // A SPECIAL KEYWORD prevents function from editing state variables;
     // allows function to run locally/off blockchain
-    function balance() public view returns (uint) {
-        require(enrolled[msg.sender], "sender is not enrolled");
+    function balance() public view userEnrolled returns (uint) {
         return balances[msg.sender];
     }
 
